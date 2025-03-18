@@ -55,26 +55,6 @@
 (elfeed-feed-entries
  "https://planet.emacslife.com/atom.xml")
 
-(defun treemacs-elfeed-set-filter(&optional btn)
-  ;; (message "open btn->%s" btn)
-  ;; (message "url->%s" (text-properties-at btn))
-  (let (
-		(feedurl (treemacs-button-get btn :feedurl))
-		)
-	(elfeed-search-set-filter (format " =%s @1-year-old" feedurl))
-	)
-  )
-
-(defun treemacs-elfeed-clear-filter(&optional btn)
-  (let (
-		(feedurl (treemacs-button-get btn :feedurl))
-		)
-	(with-current-buffer (elfeed-search-buffer)
-	  (elfeed-search-clear-filter)
-	  )
-	)
-  )
-
 (defun treemacs-elfeed-open-entry(&optional state)
   ;; [[**  (bookmark--jump-via "("ref:elfeed-search-show-entry" (filename . "~/.emacs.d/straight/repos/elfeed/elfeed-search.el") (front-context-string . "(defun elfeed-se") (rear-context-string . "rward-line))))\n\n") (position . 33408) (last-modified 26574 24851 908485 0) (defaults "elfeed-search.el"))" 'switch-to-buffer-other-window)  **]]
   (let ((entry (treemacs-button-get (treemacs-node-at-point) :item)))
@@ -96,7 +76,10 @@
 
 (defun treemacs-elfeed-view-entry(&optional state)
   ;; [[**  (bookmark--jump-via "("ref:elfeed-search-show-entry" (filename . "~/.emacs.d/straight/repos/elfeed/elfeed-search.el") (front-context-string . "(defun elfeed-se") (rear-context-string . "rward-line))))\n\n") (position . 33408) (last-modified 26574 24851 908485 0) (defaults "elfeed-search.el"))" 'switch-to-buffer-other-window)  **]]
-  (let ((entry (treemacs-button-get (treemacs-node-at-point) :item)))
+  (let (
+		(entry (treemacs-button-get (treemacs-node-at-point) :item))
+		(treemacs-select-functions nil)
+		)
 	(require 'elfeed-show)
 	(when (elfeed-entry-p entry)
 	  (pop-to-buffer (elfeed-search-buffer))
@@ -125,6 +108,9 @@
   :child-type 'rss-feed
   )
 
+(defun zyt/expand-rss-feed()
+  
+  )
 (treemacs-define-expandable-node-type rss-feed
   ;; :closed-icon (treemacs-get-icon-value 'mail-plus)
   :closed-icon (all-the-icons-dired--icon "~/org-roam-files")
@@ -141,23 +127,23 @@
   ;; 				(elfeed)
   ;; 				)
   :on-expand
-  ;; (lambda(&optional btn)
-  ;; (elfeed)
-  (progn
+  (let (
+		(feedurl (treemacs-button-get btn :feedurl))
+		(treemacs-select-functions nil)
+		)
 	(pop-to-buffer (elfeed-search-buffer))
-	(elfeed)
-	(elfeed-search-update--force)
+	(elfeed-search-set-filter (format " =%s @1-year-old" feedurl))
 	(treemacs-select-window)
-	(treemacs-elfeed-set-filter btn)
 	)
   :on-collapse
-  ;; (lambda(&optional btn)
-  ;; (progn
-  ;; (elfeed)
-  (treemacs-elfeed-clear-filter btn)
-  (elfeed-search-update--force)
-  ;; )
-  ;; )
+  (let (
+		(feedurl (treemacs-button-get btn :feedurl))
+		(treemacs-select-functions nil)
+		)
+	(pop-to-buffer (elfeed-search-buffer))
+	(elfeed-search-clear-filter)
+	(treemacs-select-window)
+	)
   )
 
 (treemacs-define-leaf-node-type rss-feed-virtual-entry
