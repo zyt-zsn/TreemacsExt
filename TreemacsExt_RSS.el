@@ -111,6 +111,11 @@
 (defun zyt/expand-rss-feed()
   
   )
+
+(defun escape-question-mark (string)
+  "Escapes question marks in a string with a backslash."
+  (replace-regexp-in-string "?" "\\?" string t t))
+
 (treemacs-define-expandable-node-type rss-feed
   ;; :closed-icon (treemacs-get-icon-value 'mail-plus)
   :closed-icon (all-the-icons-dired--icon "~/org-roam-files")
@@ -128,16 +133,18 @@
   ;; 				)
   :on-expand
   (let (
-		(feedurl (treemacs-button-get btn :feedurl))
+		;; 类似如下youtube channel的feed url 包含`?`, 需要进行转义处理
+		;; "https://www.youtube.com/feeds/videos.xml?channel_id=UCWZ3HFiJkxG1K8C4HVnyBvQ"
+		(feedurl (escape-question-mark (treemacs-button-get btn :feedurl)))
 		(treemacs-select-functions nil)
 		)
 	(pop-to-buffer (elfeed-search-buffer))
+	(elfeed-search-mode)
 	(elfeed-search-set-filter (format " =%s @1-year-old" feedurl))
 	(treemacs-select-window)
 	)
   :on-collapse
   (let (
-		(feedurl (treemacs-button-get btn :feedurl))
 		(treemacs-select-functions nil)
 		)
 	(pop-to-buffer (elfeed-search-buffer))
