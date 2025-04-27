@@ -35,21 +35,25 @@
 ;;   (deactivate-mark)
 ;;   nil
 ;;   )
-
+(defvar-local zyt/elfeed-valid-feeds-cache nil)
 (defun zyt/elfeed-list-feeds()
   (interactive)
-  (--keep
-   (let (
-		 (feed-id
-		  (or (and (stringp it) it)
-			  (car it))
-		  )
-		 )
-	 (and (elfeed-feed-entries feed-id)
-		  (elfeed-db-get-feed feed-id))
-	 )
-   elfeed-feeds
-   )
+  (or zyt/elfeed-valid-feeds-cache
+	  (setq-local zyt/elfeed-valid-feeds-cache
+				  (--keep
+				   (let (
+						 (feed-id
+						  (or (and (stringp it) it)
+							  (car it))
+						  )
+						 )
+					 (and (elfeed-feed-entries feed-id)
+						  (elfeed-db-get-feed feed-id))
+					 )
+				   elfeed-feeds
+				   )
+				  )
+	  )
   )
 ;; (elfeed-db-get-feed 
 (elfeed-feed-entries
