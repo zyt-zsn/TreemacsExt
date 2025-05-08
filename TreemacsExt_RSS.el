@@ -193,6 +193,12 @@
   (if 
 	  (equal path current-tag-cache)
 	  'matched
+	(if
+		(--all?
+		 (equal it (nth it-index current-tag-cache))
+		 path)
+		'partial-matched
+		)
 	)
   )
 
