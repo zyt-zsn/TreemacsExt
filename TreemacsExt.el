@@ -1,6 +1,7 @@
 ;; -*- lexical-binding: t -*-
 ;;zyt
 (require 's)
+(require 'treemacs-macros)
 
 (defun treemacs--do-follow-tag-extension (flat-index treemacs-window path project)
   "Actual tag-follow implementation, run once the necessary data is gathered.
