@@ -196,7 +196,8 @@
 	(if
 		(--all?
 		 (equal it (nth it-index current-tag-cache))
-		 path)
+		 (if (listp path) path (list path))
+		 )
 		'partial-matched
 		)
 	)
