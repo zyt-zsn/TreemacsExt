@@ -74,6 +74,104 @@ PROJECT: Project Struct"
 		   (treemacs--maybe-recenter treemacs-recenter-after-tag-follow))))))
   )
 
+(defun treemacs--direct-children (&optional path)
+  "Get all children with the given path."
+  (declare (side-effect-free t))
+  (or path (setq path (treemacs-button-get (treemacs-current-button) :path)))
+  (with-selected-window (treemacs-get-local-window)
+	(treemacs-goto-extension-node path)
+	(if (treemacs-is-node-collapsed? (treemacs-current-button))
+		(treemacs-expand-extension-node 0))
+	)
+  (save-excursion
+	(let* ((current-btn (treemacs-current-button))
+		   (depth (1+ (treemacs-button-get current-btn :depth)))
+		   (result))
+	  (while (and
+			  (= 0 (forward-line 1))
+			  (setq current-btn (treemacs-current-button))
+			  (<= depth (treemacs-button-get current-btn :depth))
+			  )
+		(when 
+			(= depth (treemacs-button-get current-btn :depth)))
+		(push (treemacs-button-get current-btn :path) result))
+	  result
+	  )
+	)
+  )
+
+;; Functions relating to tag following support 
+(defun treemacs--follow-tag-current-path (match-function current-tag-cache &optional ht-table-cache recusion-cnt parent-path)
+  (or recusion-cnt (progn (setq matched-path-list nil) (setq recusion-cnt 1)))
+  (or ht-table-cache (setq ht-table-cache (with-selected-window (treemacs-get-local-window) treemacs-dom)))
+  (let* (
+		 (match-length 0)
+		 partial-matched?
+		 idx
+		 ret
+		 matched-str
+		 )
+	(--any
+	 (cl-case (funcall match-function it current-tag-cache)
+	   ('matched
+		(setq partial-matched? nil)
+		(setq ret it))
+	   ('partial-matched-ignore-following
+		(setq partial-matched? t)
+		(setq ret it))
+	   ('partial-matched
+		(unless (>= match-length (if (listp it) (length it) 1))
+		  (setq match-length (if (listp it) (length it) 1))
+		  (setq ret it)
+		  )
+		(setq partial-matched? t)
+		nil
+		)
+	   )
+	 (if parent-path
+		 (treemacs--direct-children parent-path)
+	   (ht-keys ht-table-cache))
+	 )
+	(if (and partial-matched? (< recusion-cnt 10))
+		(with-selected-window (treemacs-get-local-window)
+		  (print (format "递归层数:%d" recusion-cnt))
+		  (let* ((target-node (treemacs--find-custom-node ret)))
+			(treemacs-goto-extension-node ret)
+			(treemacs-collapse-extension-node)
+			(treemacs-expand-extension-node 0)
+			;; (if (treemacs-is-node-collapsed? (treemacs-current-button))
+			;;   (if t;; Info 不适用于chm方式的判断 ;;(equal (concat matched-str "#" (car current-section)) current-link)
+			;; 	  (treemacs-expand-extension-node t)
+			;; 	(treemacs-expand-extension-node 0))
+			;;   )
+			(or (treemacs--follow-tag-current-path match-function current-tag-cache ht-table-cache (1+ recusion-cnt) ret)
+				(progn
+				  (treemacs-collapse-extension-node)
+				  (treemacs-expand-extension-node 999)
+				  (treemacs--follow-tag-current-path match-function current-tag-cache ht-table-cache (1+ recusion-cnt) ret)
+				  nil
+				  )
+				)
+			)
+		  )
+	  (when ret
+		(with-selected-window (treemacs-get-local-window)
+		  (treemacs-goto-extension-node ret)
+		  ;; (treemacs-collapse-extension-node t)
+		  ;; (treemacs-expand-extension-node 0)
+
+
+		  (if (treemacs-is-node-collapsed? (treemacs-current-button))
+			  ;; ;;(treemacs-collapse-extension-node t)
+			  (treemacs-expand-extension-node 0))
+		  )
+		(setq matched-path-list nil)
+		)
+	  ret
+	  )
+	)
+  )
+
 (defmacro treemacs-tag-follow-mode-add-ext
 	(ext-name m-mode match-function cur-tag ext-project)
   (let (
